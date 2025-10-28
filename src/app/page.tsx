@@ -1,103 +1,132 @@
-import Image from "next/image";
+"use client";
+
+import { useAssignPeople, usePeople } from "@/hooks/usePeople";
+import { usePeopleStore } from "@/store/store";
+import { rolesList } from "@/units/constants";
+import { IEditState, IOption, IPerson, Role } from "@/units/interfaces";
+import { useEffect, useState } from "react";
+import { Spinner } from "@/components/ui/spinner";
+
+const initEditState: IEditState = {
+  id: "",
+  newRole: "none",
+};
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const { people, setPeople } = usePeopleStore();
+  const { mutate: assignPerson, isPending } = useAssignPeople();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+  const { data, isLoading, error } = usePeople();
+
+  const [isEditPerson, setIsEditPerson] = useState<IEditState>(initEditState);
+
+  useEffect(() => {
+    if (error) console.log(`Error: ${(error as Error).message}`);
+  }, [error]);
+
+  useEffect(() => {
+    if (data) setPeople(data);
+  }, [data, setPeople]);
+
+  const handleAssign = () => {
+    assignPerson({
+      person_id: isEditPerson.id,
+      new_role: isEditPerson.newRole,
+    });
+
+    setIsEditPerson(initEditState);
+  };
+
+  const getLabel = (role: Role) => {
+    switch (role) {
+      case "leader":
+        return "Leader";
+
+      case "group1":
+        return "Group 1";
+
+      case "group2":
+        return "Group 2";
+
+      case "none":
+        return "Not setup";
+
+      default:
+        break;
+    }
+  };
+
+  return (
+    <div className="font-sans flex flex-col gap-4">
+      <div className="bg-neutral-200 border-none px-8 py-4 text-2xl font-semibold">
+        People{" "}
+        <span className="border border-neutral-300 px-2">{people.length}</span>
+      </div>
+      <div>
+        {isLoading ? (
+          <div className="h-[85vh] w-full flex justify-center items-center">
+            <Spinner className="size-8" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 px-8 text-gray-700">
+            {people.map((person: IPerson, index: number) => (
+              <div
+                className="border border-neutral-300 bg-neutral-200 rounded-[5px] p-4"
+                key={index}
+              >
+                <p className="font-semibold text-[20px]">{person.name}</p>
+                {isEditPerson.id && isEditPerson.id === person.id ? (
+                  <div className="flex gap-4">
+                    <select
+                      className="rounded-[5px] border border-borderLight px-3 py-2 shadow-sm"
+                      value={isEditPerson.newRole}
+                      onChange={(e) =>
+                        setIsEditPerson({
+                          ...isEditPerson,
+                          newRole: e.target.value as Role,
+                        })
+                      }
+                    >
+                      {rolesList.map((role: IOption, indexRole: number) => (
+                        <option key={indexRole} value={role.value}>
+                          {role.label}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => handleAssign()}
+                      disabled={isPending}
+                      className="border border-gray-500 text-gray-700 px-3 py-1 rounded"
+                    >
+                      &#x2713;
+                    </button>
+                    <button
+                      onClick={() => setIsEditPerson(initEditState)}
+                      disabled={isPending}
+                      className="border border-gray-500 text-gray-700 px-3 py-1 rounded"
+                    >
+                      &#10008;
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex justify-start items-center gap-4">
+                    <p>{getLabel(person.role)}</p>
+                    <button
+                      onClick={() =>
+                        setIsEditPerson({ newRole: person.role, id: person.id })
+                      }
+                      disabled={isPending}
+                      className="border border-gray-500 text-gray-700 px-3 py-1 rounded"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

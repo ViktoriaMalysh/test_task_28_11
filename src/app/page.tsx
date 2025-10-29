@@ -34,7 +34,6 @@ export default function Home() {
     if (errorAssign) {
       const message = (errorAssign as Error).message || "Something went wrong";
       toast.error(message);
-      console.log(message);
     }
   }, [error, toast, errorAssign]);
 

@@ -23,7 +23,10 @@ const assignPeople = async (payload: AssignPayload): Promise<IPerson> => {
     body: JSON.stringify(payload),
   });
 
-  if (!res.ok) throw new Error("Failed to assign person");
+  if (!res.ok) {
+    const result = await res.json();
+    throw new Error(result.detail || "Failed to assign person");
+  }
   return res.json();
 };
 
